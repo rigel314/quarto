@@ -202,10 +202,10 @@ void printPiece(int row, int col, piece p)
 {
 	if(p.attrs != -1)
 	{
-		mvprintw(row,col,"%d",p.height);
-		mvprintw(row,col+2,"%d",p.shape);
-		mvprintw(row+1,col,"%d",p.divet);
-		mvprintw(row+1,col+2,"%d",p.color);
+		mvprintw(row,col,"%d",p.color);
+		mvprintw(row,col+2,"%d",p.divet);
+		mvprintw(row+1,col,"%d",p.shape);
+		mvprintw(row+1,col+2,"%d",p.height);
 	}
 	else
 	{
