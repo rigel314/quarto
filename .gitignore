@@ -1,17 +1,10 @@
-# Object files
+Debug
 *.o
+quarto
 
-# Libraries
-*.lib
-*.a
+.cproject
+.project
+.settings
 
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
-
-# Executables
-*.exe
-*.out
-*.app
+*~
+\#*\#

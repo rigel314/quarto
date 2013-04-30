@@ -11,6 +11,7 @@
 
 #include <stdio.h>
 #include <ncurses.h>
+#include <stdlib.h>
 
 #define boardWidth		10
 #define boardHeight		5
@@ -36,12 +37,18 @@ typedef union
 	int attrs;
 } piece;
 
-void printBoard();
+void printBoard(piece board[4][4]);
 void printBoardPiece(int row, int col, piece p);
 void printLine(int row, int col, int direction, int len);
 void printPiece(int row, int col, piece p);
 char toHex(int x);
 int fromHex(char x);
+int fullRows(piece board[4][4]);
+int orPiece(piece p);
+int pathWinP(piece* p[4]);
+piece** makePath(piece board[4][4], int pathNum);
+int isWin(piece board[4][4]);
+void safeExit(int ret);
 
 piece board[4][4];
 piece blank;
@@ -61,12 +68,14 @@ int main()
 		board[i/4][i%4].attrs=-1;
 	}
 
+	// ncurses stuff
 	initscr();
 	raw();
 	noecho();
 	curs_set(0);
 	keypad(stdscr,TRUE);
 
+	// Pieces in the pool.
 	for(i=0;i<16;i++)
 	{
 		mvprintw(0,5*i,"%x",i);
@@ -74,7 +83,7 @@ int main()
 	}
 
 	mvprintw(boardStartRow+boardHeight*4+1,boardStartCol+boardWidth*4+1,pieceMsg);
-	printBoard();
+	printBoard(board);
 	refresh();
 
 	while((c = getch()))
@@ -109,7 +118,9 @@ int main()
 			return 0;
 		}
 		mvprintw(boardStartRow+boardHeight*4+1,boardStartCol+boardWidth*4+1,((select) ? pieceMsg : placeMsg),toHex(i));
-		printBoard();
+		printBoard(board);
+		// DEBUG SHIT HERE. mvprintw(0,0,"%d",fullRows(board));
+		isWin(board);
 		refresh();
 	}
 
@@ -117,7 +128,7 @@ int main()
 	return 0;
 }
 
-void printBoard()
+void printBoard(piece board[4][4])
 {
 	int i,j;
 
@@ -230,4 +241,103 @@ int fromHex(char x)
 		return x-'0';
 	else
 		return x-'a'+10;
+}
+
+int fullRows(piece board[4][4])
+{ // Output 10bit number with each bit showing whether or not a path is complete(should be checked for end of game).
+	int i,j;
+	int out = 1023;
+
+	for(i=0;i<4;i++)
+	{
+		for(j=0;j<4;j++)
+		{ // Yay! Mixing logical and bitwise operations.
+			// So, if there is no piece, shift the 1 up by i and complement it.
+			// Then AND with out.  This only changes bit i.
+
+			out = ~((board[i][j].attrs == -1) << i) & out; // Horizontals
+
+			out = ~((board[i][j].attrs == -1) << (4+j)) & out; // Verticals -- easier than I was expecting.
+
+			if(i==j) // For our diagonals too.
+				out = ~((board[i][j].attrs == -1) << 8) & out;
+			if(i==3-j)
+				out = ~((board[i][j].attrs == -1) << 9) & out;
+		}
+	}
+	return out;
+}
+int orPiece(piece p)
+{
+	return p.color<<3 | p.divet<<2 | p.shape<<1 | p.height;
+}
+int pathWinP(piece* p[4])
+{
+	if(!p)
+		return 0;
+	return ~((p[0]->attrs & p[1]->attrs & p[2]->attrs & p[3]->attrs) ^ (p[0]->attrs | p[1]->attrs | p[2]->attrs | p[3]->attrs)) & 15;
+}
+piece** makePath(piece board[4][4], int pathNum)
+{
+	int i;
+	piece** path;
+
+	path = calloc(4,sizeof(piece*));
+
+	if(!path)
+		return NULL;
+
+	for(i=0; i<4; i++)
+	{
+		int X;
+		int Y;
+
+		if(pathNum<4){
+			X=pathNum;
+			Y=i;}
+		else if (pathNum<8){
+			X=i;
+			Y=pathNum%4;}
+		else if (pathNum==8){
+			X=i;
+			Y=i;}
+		else if (pathNum==9){
+			X=i;
+			Y=3-i;
+		}
+
+		path[i] = &board[X][Y];
+	}
+
+	return path;
+}
+int isWin(piece board[4][4])
+{
+	int i,j;
+	int wins;
+	piece** p;
+
+	for(i=fullRows(board), j=0; i!=0; i >>= 1, j++)
+	{
+		if(!(i & 1)) // If the path isn't full.
+			continue;
+
+		p = makePath(board,j);
+
+		wins = pathWinP(p);
+		free(p);
+
+		if(wins)
+		{
+			mvprintw(j,0,"%d:%d",j,wins);
+		}
+	}
+
+	return 0;
+}
+
+void safeExit(int ret)
+{
+	endwin();
+	exit(ret);
 }
