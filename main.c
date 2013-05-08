@@ -25,6 +25,8 @@
 #define placeMsg		"Place piece %c. "
 #define player1Msg		"Player 1:"
 #define player2Msg		"Player 2:"
+#define winsMsg			"Wins           "
+#define gameOverMsg		"Game Over !"
 
 typedef union
 {
@@ -61,6 +63,7 @@ int main()
 	int i,c,last;
 	char select = 1;
 	bool player = true;
+	bool gameOver = false;
 	piece* newPiece;
 
 	blank.attrs = -1;
@@ -85,18 +88,19 @@ int main()
 	}
 
 	mvprintw(boardStartRow+boardHeight*4+1,0,player1Msg);
-	mvprintw(boardStartRow+boardHeight*4+1,boardStartCol+boardWidth*4+1,pieceMsg);
+	mvprintw(boardStartRow+boardHeight*4+1,sizeof(player1Msg),pieceMsg);
 	printBoard(board);
 	refresh();
 
 	while((c = getch()))
 	{
-		if((c>='0' && c<='9') || (c>='a' && c<='f'))
+		if(((c>='0' && c<='9') || (c>='a' && c<='f')) && !gameOver)
 		{
 			i = fromHex(c);
 			if(select && !used[i])
 			{
 				select = !select;
+				player = !player;
 				used[i] = 1;
 				newPiece = &pieces[i];
 
@@ -109,7 +113,6 @@ int main()
 			else if(!select && board[i/4][i%4].attrs == -1)
 			{
 				select = !select;
-				player = !player;
 				board[i/4][i%4].attrs = newPiece->attrs;
 
 				mvaddch(0,5*last,' ');
@@ -122,10 +125,15 @@ int main()
 			return 0;
 		}
 		mvprintw(boardStartRow+boardHeight*4+1,0,((player) ? player1Msg : player2Msg));
-		mvprintw(boardStartRow+boardHeight*4+1,boardStartCol+boardWidth*4+1,((select) ? pieceMsg : placeMsg),toHex(i));
+		mvprintw(boardStartRow+boardHeight*4+1,((player) ? sizeof(player1Msg) : sizeof(player2Msg)),((select) ? pieceMsg : placeMsg),toHex(i));
 		printBoard(board);
 		// DEBUG SHIT HERE. mvprintw(0,0,"%d",fullRows(board));
-		isWin(board);
+		if(isWin(board))
+		{
+			gameOver = true;
+			mvprintw(boardStartRow+boardHeight*4+1,((player) ? sizeof(player1Msg) : sizeof(player2Msg)),winsMsg);
+			mvprintw(boardStartRow+boardHeight*4+1+1,0,gameOverMsg);
+		}
 		refresh();
 	}
 
@@ -334,7 +342,8 @@ int isWin(piece board[4][4])
 
 		if(wins)
 		{
-			mvprintw(j,0,"%d:%d",j,wins);
+			//mvprintw(j,0,"%d:%d",j,wins);
+			return 1;
 		}
 	}
 
