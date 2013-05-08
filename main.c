@@ -23,7 +23,8 @@
 #define centerFactV		(boardHeight-2)/2+1
 #define pieceMsg		"Select a piece."
 #define placeMsg		"Place piece %c. "
-
+#define player1Msg		"Player 1:"
+#define player2Msg		"Player 2:"
 
 typedef union
 {
@@ -59,6 +60,7 @@ int main()
 	char used[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 	int i,c,last;
 	char select = 1;
+	bool player = true;
 	piece* newPiece;
 
 	blank.attrs = -1;
@@ -82,6 +84,7 @@ int main()
 		printPiece(1,5*i,pieces[i]);
 	}
 
+	mvprintw(boardStartRow+boardHeight*4+1,0,player1Msg);
 	mvprintw(boardStartRow+boardHeight*4+1,boardStartCol+boardWidth*4+1,pieceMsg);
 	printBoard(board);
 	refresh();
@@ -106,6 +109,7 @@ int main()
 			else if(!select && board[i/4][i%4].attrs == -1)
 			{
 				select = !select;
+				player = !player;
 				board[i/4][i%4].attrs = newPiece->attrs;
 
 				mvaddch(0,5*last,' ');
@@ -117,6 +121,7 @@ int main()
 			endwin();
 			return 0;
 		}
+		mvprintw(boardStartRow+boardHeight*4+1,0,((player) ? player1Msg : player2Msg));
 		mvprintw(boardStartRow+boardHeight*4+1,boardStartCol+boardWidth*4+1,((select) ? pieceMsg : placeMsg),toHex(i));
 		printBoard(board);
 		// DEBUG SHIT HERE. mvprintw(0,0,"%d",fullRows(board));
